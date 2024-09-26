@@ -16,11 +16,6 @@ body {
     /*overflow: hidden; */
 }
 
-.container {
-    display: flex;
-    flex: 1;
-}
-
 /* Left column styling */
 .left-column {
     position: fixed;
@@ -224,17 +219,18 @@ a:hover {
     body {
         overflow: auto;
     }
-    .container {
-        flex-direction: column;
-    }
     .left-column {
+        position: relative;
         width: 100%;
-        padding: 20px;
-        margin-bottom: 20px;
+        height: auto;
+        margin-bottom: 0;
     }
     .right-column {
+        position: relative;
+        left: 0;
         width: 100%;
         padding: 20px;
+        height: auto;
     }
     .content-wrapper {
         max-width: 100%;
@@ -254,5 +250,6 @@ a:hover {
         position: relative;
         left: 0;
         width: 100%;
+        margin-bottom: 0;
     }
 }
