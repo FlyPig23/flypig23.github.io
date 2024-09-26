@@ -6,11 +6,19 @@
 }
 
 body {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
     background-color: #ffffff;
     color: #696262;
     line-height: 1.6;
     /*overflow: hidden; */
+}
+
+.container {
+    display: flex;
+    flex: 1;
 }
 
 /* Left column styling */
@@ -216,18 +224,17 @@ a:hover {
     body {
         overflow: auto;
     }
+    .container {
+        flex-direction: column;
+    }
     .left-column {
-        position: relative;
         width: 100%;
-        height: auto;
+        padding: 20px;
         margin-bottom: 20px;
     }
     .right-column {
-        position: relative;
-        left: 0;
         width: 100%;
         padding: 20px;
-        height: auto;
     }
     .content-wrapper {
         max-width: 100%;
