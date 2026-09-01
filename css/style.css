@@ -253,7 +253,6 @@ a {
 
 .hero-links,
 .education-list,
-.research-interest-list,
 .news-list,
 .publication-list,
 .publication-links,
@@ -366,8 +365,7 @@ a {
 .section-index,
 .publication-year,
 .publication-status,
-.education-kind,
-.research-interest-index {
+.education-kind {
     color: var(--color-accent);
     font-family: var(--font-mono);
     font-size: .75rem;
@@ -481,33 +479,10 @@ a {
     line-height: 1.45;
 }
 
-.research-interest-list {
-    display: grid;
-}
-
 .education-item,
-.research-interest-list > li,
 .news-item,
 .publication {
     border-top: 1px solid var(--color-rule);
-}
-
-.research-interest-list > li {
-    display: grid;
-    gap: 1rem;
-    align-content: space-between;
-    min-height: 9.5rem;
-    padding: 1.25rem 0 1.5rem;
-}
-
-.research-interest-list > li:last-child {
-    border-bottom: 1px solid var(--color-rule);
-}
-
-.research-interest-title {
-    max-width: 12ch;
-    margin: 0;
-    font: 500 clamp(1.35rem, 2.5vw, 2rem)/1.1 var(--font-display);
 }
 
 .news-item {
@@ -659,25 +634,6 @@ a {
 
     .about-layout {
         grid-template-columns: minmax(0, 1fr) minmax(17rem, .9fr);
-    }
-
-    .research-interest-list {
-        grid-template-columns: repeat(3, minmax(0, 1fr));
-        border-bottom: 1px solid var(--color-rule);
-    }
-
-    .research-interest-list > li {
-        min-height: 11rem;
-        padding: 1.25rem clamp(1rem, 2.3vw, 1.75rem) 1.5rem;
-        border-bottom: 0;
-    }
-
-    .research-interest-list > li:first-child {
-        padding-left: 0;
-    }
-
-    .research-interest-list > li + li {
-        border-left: 1px solid var(--color-rule);
     }
 
     .publication {

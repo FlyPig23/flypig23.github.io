@@ -8,6 +8,8 @@
 
 **Tech Stack:** HTML5, CSS3, vanilla JavaScript, Python 3 standard-library `unittest`, GitHub Pages.
 
+**2026-09-01 design revision:** Keep Agent System, Data Mining, and AI for Science in one ordinary sentence inside the About self-introduction. Do not render a separate Research Interests section or navigation item. The section order is About / Education, News, then Publications, numbered 01–03.
+
 ---
 
 ## File map
@@ -70,7 +72,6 @@ Define these exact expectations:
 ```python
 EXPECTED_SECTIONS = [
     "about-me",
-    "research-interests",
     "news",
     "publications",
 ]
@@ -104,8 +105,10 @@ Implement test methods that assert all of the following:
 ```text
 header#hero exists and precedes main#main-content
 main's top-level section ids equal EXPECTED_SECTIONS in order
-the primary nav links to those four section ids in order
-.research-interest-title text equals EXPECTED_INTERESTS
+the primary nav links to those three section ids in order
+the About copy contains Agent System, Data Mining, and AI for Science in one paragraph
+no #research-interests section, Research navigation item, or .research-interest-title exists
+the About, News, and Publications section indices equal 01, 02, and 03
 li.news-item text equals EXPECTED_NEWS and there are exactly two
 article.publication count is nine and each has data-status
 each publication exposes .publication-year, .publication-title, .publication-authors, and .publication-status
@@ -141,7 +144,7 @@ Run:
 python3 -m unittest discover -s tests -p 'test_*.py' -v
 ```
 
-Expected: failures for missing `#hero`, `#main-content`, `#research-interests`, the approved News, nine publications, semantic metadata, and accessibility hooks. Parser/import errors are not acceptable; fix the test harness until it runs and fails only on the old page.
+Expected: failures for missing `#hero`, `#main-content`, the integrated About research sentence, the approved News, nine publications, semantic metadata, and accessibility hooks. Parser/import errors are not acceptable; fix the test harness until it runs and fails only on the old page.
 
 - [ ] **Step 4: Keep the failing contract uncommitted**
 
@@ -201,7 +204,6 @@ Use this exact outer structure:
       <a class="site-nav-brand" href="#hero">HZ / Research Index</a>
       <ul class="site-nav-links">
         <li><a href="#about-me">About</a></li>
-        <li><a href="#research-interests">Research</a></li>
         <li><a href="#news">News</a></li>
         <li><a href="#publications">Publications</a></li>
       </ul>
@@ -229,7 +231,6 @@ Use this exact outer structure:
   </header>
   <main id="main-content">
     <section id="about-me" class="section section-about"></section>
-    <section id="research-interests" class="section"></section>
     <section id="news" class="section"></section>
     <section id="publications" class="section"></section>
   </main>
@@ -246,22 +247,15 @@ Populate these initially empty section elements with the exact content defined i
 The first section must use a `section-inner` wrapper, an `h2` titled `About & Education`, and an `about-layout` containing:
 
 - a concise About paragraph naming Prof. Yu Zhang, Prof. Alvitta Ottley, and Prof. Ming Yin with their existing links;
+- the ordinary sentence `My research interests center on Agent System, Data Mining, and AI for Science.` inside that About paragraph;
 - a `Beyond Research` paragraph preserving the Ohio State football, Lakers, and Texans links;
 - an `ol.education-list` with Texas A&M, Washington University in St. Louis, Ohio State University, and Purdue research mentorship in that order;
 - `images/rev.jpg` (`642×630`), `images/bears.png` (`1024×847`), and `images/buckeye.png` (`764×901`) inside their matching education rows with `loading="lazy"`;
 - a text-only Purdue row because the repository has no Purdue asset.
 
-- [ ] **Step 4: Implement the exact interests and News**
+- [ ] **Step 4: Implement News without a separate interests section**
 
-Use these exact structures:
-
-```html
-<ol class="research-interest-list">
-  <li><span class="research-interest-index" aria-hidden="true">01</span><h3 class="research-interest-title">Agent System</h3></li>
-  <li><span class="research-interest-index" aria-hidden="true">02</span><h3 class="research-interest-title">Data Mining</h3></li>
-  <li><span class="research-interest-index" aria-hidden="true">03</span><h3 class="research-interest-title">AI for Science</h3></li>
-</ol>
-```
+Do not add a `#research-interests` section or Research navigation item. The exact interests belong only in the About sentence from Step 3. Number News `02` and Publications `03`.
 
 ```html
 <ol class="news-list">
@@ -429,9 +423,8 @@ Use the following rules as the structural contract:
 .section-inner { display: grid; gap: 2rem; }
 .section-index, .publication-year, .publication-status { color: var(--color-accent); font-family: var(--font-mono); font-size: .75rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
 .about-copy { max-width: var(--text-measure); }
-.education-list, .research-interest-list, .news-list, .publication-list, .publication-links, .contact-list, .site-nav-links { margin: 0; padding: 0; list-style: none; }
-.education-item, .research-interest-list > li, .news-item, .publication { border-top: 1px solid var(--color-rule); }
-.research-interest-title { margin: 0; font: 500 clamp(1.35rem, 2.5vw, 2rem)/1.1 var(--font-display); }
+.education-list, .news-list, .publication-list, .publication-links, .contact-list, .site-nav-links { margin: 0; padding: 0; list-style: none; }
+.education-item, .news-item, .publication { border-top: 1px solid var(--color-rule); }
 .news-item { display: grid; grid-template-columns: 4rem auto 1fr; gap: .75rem; padding-block: 1rem; }
 .publication { display: grid; gap: .85rem; padding-block: clamp(1.35rem, 3vw, 2rem); }
 .publication-title { margin: 0; max-width: 62rem; font: 600 clamp(1.05rem, .35vw + 1rem, 1.25rem)/1.35 var(--font-body); }
@@ -452,7 +445,6 @@ Use these breakpoints:
 @media (min-width: 48rem) {
   .hero-body { grid-template-columns: 12rem minmax(0, 1fr); }
   .about-layout { grid-template-columns: minmax(0, 1fr) minmax(17rem, .9fr); }
-  .research-interest-list { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .publication { grid-template-columns: 7rem minmax(0, 1fr); }
 }
 

@@ -13,7 +13,6 @@ CANONICAL_URL = "https://flypig23.github.io/"
 
 EXPECTED_SECTIONS = [
     "about-me",
-    "research-interests",
     "news",
     "publications",
 ]
@@ -871,28 +870,39 @@ class SiteContractTests(unittest.TestCase):
         ]
         self.assertEqual(actual, expected)
 
-    def test_research_interests_are_exact_and_ordered(self):
-        section, _, items = self.section_list_items(
-            "research-interests",
-            "research-interest-list",
-        )
-        self.assertEqual(len(items), len(EXPECTED_INTERESTS))
-
-        interests = [
-            self.one(
-                self.with_class(item, "research-interest-title"),
-                "research interest title",
+    def test_research_interests_are_integrated_into_about_copy(self):
+        about = self.by_id("about-me")
+        paragraphs = [
+            element
+            for element in self.elements(about, tag="p")
+            if all(
+                interest in element.visible_text
+                for interest in EXPECTED_INTERESTS
             )
-            for item in items
         ]
+
+        self.one(paragraphs, "About paragraph containing all research interests")
         self.assertEqual(
-            self.with_class(section, "research-interest-title"),
-            interests,
+            [
+                element
+                for element in self.elements()
+                if element.attr("id") == "research-interests"
+            ],
+            [],
         )
-        self.assertEqual(
-            [interest.text for interest in interests],
-            EXPECTED_INTERESTS,
-        )
+        self.assertEqual(self.with_class(about, "research-interest-title"), [])
+
+    def test_section_indices_match_three_section_order(self):
+        actual = []
+        for section_id in EXPECTED_SECTIONS:
+            section = self.by_id(section_id)
+            index = self.one(
+                self.with_class(section, "section-index"),
+                f"section index for #{section_id}",
+            )
+            actual.append(index.text)
+
+        self.assertEqual(actual, ["01", "02", "03"])
 
     def test_news_contains_only_the_approved_items(self):
         section, _, items = self.section_list_items("news", "news-list")

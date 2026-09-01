@@ -1,7 +1,7 @@
 # Hangxiao Zhu Academic Homepage Redesign
 
 Date: 2026-08-31  
-Status: Approved
+Status: Approved; revised 2026-09-01
 
 ## Summary
 
@@ -43,10 +43,9 @@ The site remains one continuous page with this order:
 
 1. **Hero**
 2. **About / Education**
-3. **Research Interests**
-4. **News**
-5. **Publications**
-6. **Footer**
+3. **News**
+4. **Publications**
+5. **Footer**
 
 The top navigation links to the relevant page anchors. On narrow screens, it remains compact and does not become a complex menu.
 
@@ -66,21 +65,14 @@ The hero uses a deep charcoal background and contains:
 This section appears immediately after the hero. It preserves the current personal story and reorganizes it into two readable parts:
 
 - A concise About paragraph covering current Ph.D. study, mentors, earlier education, and research-intern experience.
+- An ordinary sentence in the About paragraph naming the three research interests exactly: Agent System, Data Mining, and AI for Science.
 - An Education / Mentorship timeline containing Texas A&M, Washington University in St. Louis, Ohio State, and Purdue-related mentorship.
 
 The existing Reveille, WashU Bears, and Buckeye imagery moves out of inline prose and into the structured education area. The current sports interests remain as a short “Beyond Research” note.
 
-### 3. Research Interests
+Research interests do not receive their own section, navigation item, large heading, or typographic blocks. They remain part of the self-introduction in ordinary body typography.
 
-Display exactly these three areas, in this order:
-
-1. Agent System
-2. Data Mining
-3. AI for Science
-
-They appear as equal-weight typographic blocks rather than interactive cards.
-
-### 4. News
+### 3. News
 
 News contains exactly two entries:
 
@@ -89,7 +81,7 @@ News contains exactly two entries:
 
 Do not include the former CHI 2025 or Ph.D.-start items. Do not invent month/day dates that have not been supplied or verified.
 
-### 5. Publications
+### 4. Publications
 
 Use one compact bibliography, newest first. No work receives a larger card, thumbnail, or “featured” label. Each row includes:
 
@@ -115,7 +107,7 @@ Within the same year, use the latest verifiable release/publication date. The ve
 
 The existing three publication thumbnail files remain in the repository for compatibility but do not appear in the new bibliography, because showing them for only three works would violate the equal-weight requirement.
 
-### 6. Footer
+### 5. Footer
 
 Use a normal document-flow footer so it cannot cover content. Show a current copyright year and a restrained “Last updated” value if it can be maintained accurately.
 
@@ -176,7 +168,7 @@ The hierarchy should remain compact: publication titles must not expand into ove
 
 - Preserve the existing static HTML/CSS architecture and GitHub Pages root deployment.
 - Preserve existing public asset paths, especially the portrait, school assets, and CV URL.
-- Keep `#about-me`, `#news`, and `#publications` anchors compatible; add a research-interest anchor without breaking old links.
+- Keep `#about-me`, `#news`, and `#publications` anchors compatible. Do not add a standalone research-interest anchor.
 - Optimize with explicit image dimensions, lazy loading below the fold, and a derived responsive portrait format without overwriting the original source image.
 - Do not add a build step or third-party framework.
 
@@ -192,6 +184,7 @@ Before publishing:
 - Verify the name is not red anywhere.
 - Verify the TAMU logo uses its original maroon color.
 - Verify the About / Education section immediately follows the hero.
+- Verify Agent System, Data Mining, and AI for Science appear naturally in the About copy, with no standalone Research Interests section or navigation item.
 - Check desktop, tablet, and mobile widths for overflow and readability.
 - Check keyboard navigation, visible focus, reduced-motion behavior, image loading, and external links.
 - Run HTML/CSS validation and a local link/asset check.
