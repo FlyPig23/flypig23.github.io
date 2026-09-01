@@ -1,7 +1,7 @@
 # Hangxiao Zhu Academic Homepage Redesign
 
 Date: 2026-08-31  
-Status: Approved in conversation; pending written-spec review
+Status: Approved
 
 ## Summary
 
@@ -101,17 +101,17 @@ Use one compact bibliography, newest first. No work receives a larger card, thum
 
 The linked Google Scholar profile currently contains these nine works:
 
+- **2026 — MemeBridge: A Dataset for Benchmarking and Mitigating the Bidirectional Cultural Gap in Meme Interpretation.** Hangxiao Zhu, Suliu Qin, Zhuoyan Li, Ming Jiang, Yu Zhang, Meng Xia. KDD 2026, Datasets and Benchmarks Track.
 - **2026 — SciImpact: A Multi-Dimensional, Multi-Field Benchmark for Scientific Impact Prediction.** Hangxiao Zhu, Yuyu Zhang, Ping Nie, Yu Zhang. Findings of ACL 2026.
 - **2026 — Inference-Time Control for Trustworthy Large Language Models.** Multi-author working paper/preprint; Hangxiao Zhu is a coauthor. It must not be shown as conference-accepted.
 - **2026 — Beyond Semantic Similarity: Rethinking Retrieval for Agentic Search via Direct Corpus Interaction.** Multi-author arXiv preprint; Hangxiao Zhu is a coauthor.
-- **2026 — MemeBridge: A Dataset for Benchmarking and Mitigating the Bidirectional Cultural Gap in Meme Interpretation.** Hangxiao Zhu, Suliu Qin, Zhuoyan Li, Ming Jiang, Yu Zhang, Meng Xia. KDD 2026, Datasets and Benchmarks Track.
 - **2025 — Survivors, Complainers, and Borderliners: Upward Bias in Online Discussions of Academic Conference Reviews.** Hangxiao Zhu, Yian Yin, Yu Zhang. arXiv preprint.
 - **2025 — TutorUp: What If Your Students Were Simulated? Training Tutors to Address Engagement Challenges in Online Learning.** Sitong Pan, Robin Schmucker, Bernardo Garcia Bulle Bueno, Salome Aguilar Llanes, Fernanda Albo Alarcón, Hangxiao Zhu, Adam Teo, Meng Xia. CHI 2025.
 - **2025 — From Text to Trust: Empowering AI-assisted Decision Making with Adaptive LLM-powered Analysis.** Zhuoyan Li, Hangxiao Zhu, Zhuoran Lu, Ziang Xiao, Ming Yin. CHI 2025.
 - **2024 — Mending Trust in AI: Trust Repair Policy Interventions for Large Language Models in Visual Data Journalism.** Hangxiao Zhu. Washington University in St. Louis master's thesis.
 - **2023 — Synthetic Data Generation with Large Language Models for Text Classification: Potential and Limitations.** Zhuoyan Li, Hangxiao Zhu, Zhuoran Lu, Ming Yin. EMNLP 2023.
 
-Within the same year, use the latest verifiable release/publication date. When precise dates are unavailable, retain the current Scholar “sort by publication date” order and display only the year.
+Within the same year, use the latest verifiable release/publication date. The verified 2026 order is MemeBridge (August), SciImpact (July), Inference-Time Control (May 15), then Beyond Semantic Similarity (May 3). When precise dates are unavailable, display only the year rather than inventing a day or month.
 
 The existing three publication thumbnail files remain in the repository for compatibility but do not appear in the new bibliography, because showing them for only three works would violate the equal-weight requirement.
 
@@ -196,4 +196,3 @@ Before publishing:
 - Check keyboard navigation, visible focus, reduced-motion behavior, image loading, and external links.
 - Run HTML/CSS validation and a local link/asset check.
 - Ensure the GitHub Pages deployment path remains the repository root.
-
