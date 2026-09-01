@@ -1,6 +1,6 @@
 # Hangxiao Zhu Academic Homepage Redesign
 
-Date: 2026-08-31  
+Date: 2026-08-31
 Status: Approved; revised 2026-09-01
 
 ## Summary
