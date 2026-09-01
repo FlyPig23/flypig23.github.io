@@ -1474,6 +1474,36 @@ class SiteContractTests(unittest.TestCase):
             "effective override",
         )
 
+    def test_hero_focus_visible_uses_warm_white_outline(self):
+        hero_focus_bodies = []
+        for prelude, body in css_blocks(strip_css_comments(self.css)):
+            if prelude.lstrip().startswith("@"):
+                continue
+            for selector in split_top_level_commas(prelude):
+                if re.fullmatch(
+                    r"\.hero\s+:focus-visible",
+                    selector.strip(),
+                    re.IGNORECASE,
+                ):
+                    hero_focus_bodies.append(body)
+
+        self.assertTrue(
+            hero_focus_bodies,
+            "Hero needs a focus-visible override for all descendants",
+        )
+        self.assertTrue(
+            any(
+                re.search(
+                    r"(?:^|;)\s*outline-color\s*:\s*"
+                    r"var\(\s*--color-hero-text\s*\)",
+                    body,
+                    re.IGNORECASE,
+                )
+                for body in hero_focus_bodies
+            ),
+            "Hero focus outline must use the warm-white hero text color",
+        )
+
     def test_stylesheets_do_not_use_import(self):
         for source, css, _ in self.stylesheet_sources():
             with self.subTest(source=source):

@@ -97,6 +97,10 @@ a {
     outline-offset: 4px;
 }
 
+.hero :focus-visible {
+    outline-color: var(--color-hero-text);
+}
+
 ::selection {
     color: var(--color-hero-text);
     background: var(--color-accent);
