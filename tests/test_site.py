@@ -1004,6 +1004,36 @@ class SiteContractTests(unittest.TestCase):
             "not be referenced by index.html",
         )
 
+    def test_portrait_has_a_responsive_derivative_and_original_fallback(self):
+        original = ROOT / "images/prof_pic.jpg"
+        derivative = ROOT / "images/prof_pic-720.jpg"
+        self.assertTrue(original.is_file(), "Original portrait must remain")
+        self.assertTrue(
+            derivative.is_file(),
+            "Missing responsive portrait derivative",
+        )
+
+        picture = self.one(
+            self.with_class(self.dom, "portrait-frame", tag="picture"),
+            "picture.portrait-frame",
+        )
+        source = self.one(
+            [child for child in picture.children if child.tag == "source"],
+            "responsive portrait source",
+        )
+        self.assertEqual(source.attr("srcset"), "images/prof_pic-720.jpg")
+        self.assertTrue(
+            source.attr("media") or source.attr("sizes"),
+            "Responsive portrait source needs a media or sizes contract",
+        )
+
+        fallback = self.one(
+            [child for child in picture.children if child.tag == "img"],
+            "original portrait fallback",
+        )
+        self.assertEqual(fallback.attr("src"), "images/prof_pic.jpg")
+        self.assertEqual(fallback.attr("fetchpriority"), "high")
+
     def test_every_local_html_and_css_reference_resolves(self):
         for source, raw_url, base_dir in self.all_references():
             with self.subTest(source=source, reference=raw_url):
