@@ -1,5 +1,6 @@
 import json
 import re
+import struct
 import unittest
 from html.parser import HTMLParser
 from pathlib import Path
@@ -151,6 +152,13 @@ RETAINED_BUT_UNUSED_ASSETS = {
     "images/text_to_trust.png",
     "images/tutorup.png",
     "images/syn_data.png",
+}
+
+EXPECTED_LOGO_ASSETS = {
+    "images/zhu-logo.png": (210, 210),
+    "images/zhu-logo-nav.png": (37, 37),
+    "images/favicon-16.png": (16, 16),
+    "images/favicon-32.png": (32, 32),
 }
 
 VOID_ELEMENTS = {
@@ -605,6 +613,51 @@ def srcset_urls(value):
             position += 1
 
 
+def png_info(path):
+    data = path.read_bytes()
+    invalid_message = f"Invalid PNG data: {path}"
+
+    if data[:8] != b"\x89PNG\r\n\x1a\n":
+        raise AssertionError(invalid_message)
+
+    offset = 8
+    if len(data) < offset + 8:
+        raise AssertionError(invalid_message)
+
+    length, chunk_type = struct.unpack(">I4s", data[offset:offset + 8])
+    if chunk_type != b"IHDR" or length != 13:
+        raise AssertionError(invalid_message)
+
+    chunk_data_end = offset + 8 + length
+    chunk_end = chunk_data_end + 4
+    if len(data) < chunk_end:
+        raise AssertionError(invalid_message)
+
+    width, height, _, color_type, _, _, _ = struct.unpack(
+        ">IIBBBBB",
+        data[offset + 8:chunk_data_end],
+    )
+    if not width or not height:
+        raise AssertionError(invalid_message)
+
+    has_alpha = color_type in {4, 6}
+    offset = chunk_end
+    while offset < len(data):
+        if len(data) < offset + 8:
+            raise AssertionError(invalid_message)
+        length, chunk_type = struct.unpack(">I4s", data[offset:offset + 8])
+        chunk_end = offset + 8 + length + 4
+        if len(data) < chunk_end:
+            raise AssertionError(invalid_message)
+        if chunk_type == b"tRNS":
+            has_alpha = True
+        if chunk_type == b"IEND":
+            return width, height, has_alpha
+        offset = chunk_end
+
+    raise AssertionError(invalid_message)
+
+
 class SiteContractTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
@@ -1030,6 +1083,68 @@ class SiteContractTests(unittest.TestCase):
             RETAINED_BUT_UNUSED_ASSETS.isdisjoint(referenced),
             "Legacy publication thumbnails must stay on disk but must "
             "not be referenced by index.html",
+        )
+
+    def test_compact_zhu_brand_lockup_and_favicons(self):
+        for relative_path, expected_dimensions in EXPECTED_LOGO_ASSETS.items():
+            with self.subTest(asset=relative_path):
+                path = ROOT / relative_path
+                self.assertTrue(
+                    path.is_file(),
+                    f"Missing compact Zhu logo asset: {relative_path}",
+                )
+                width, height, has_alpha = png_info(path)
+                self.assertEqual((width, height), expected_dimensions)
+                self.assertTrue(
+                    has_alpha,
+                    "Compact Zhu logo asset needs transparency: "
+                    f"{relative_path}",
+                )
+
+        brand = self.one(
+            self.with_class(self.dom, "brand", tag="a"),
+            "a.brand",
+        )
+        lockup = self.one(
+            self.with_class(brand, "brand-lockup"),
+            ".brand-lockup inside a.brand",
+        )
+        personal_mark = self.one(
+            self.with_class(lockup, "brand-mark", tag="img"),
+            "img.brand-mark inside .brand-lockup",
+        )
+        institution_mark = self.one(
+            self.with_class(lockup, "brand-institution-mark", tag="img"),
+            "img.brand-institution-mark inside .brand-lockup",
+        )
+
+        self.assertEqual(personal_mark.attr("src"), "images/zhu-logo-nav.png")
+        self.assertEqual(personal_mark.attr("width"), "37")
+        self.assertEqual(personal_mark.attr("height"), "37")
+        self.assertEqual(personal_mark.attr("alt"), "")
+        self.assertEqual(institution_mark.attr("src"), "images/tamu.png")
+        self.assertEqual(lockup.attr("aria-hidden"), "true")
+
+        icon_links = [
+            link
+            for link in self.elements(tag="link")
+            if "icon" in (link.attr("rel") or "").lower().split()
+        ]
+        icons = {
+            link.attr("sizes"): (link.attr("href"), link.attr("type"))
+            for link in icon_links
+        }
+        self.assertEqual(
+            len(icon_links),
+            len(icons),
+            "Favicon sizes must be unique",
+        )
+        self.assertEqual(
+            icons,
+            {
+                "16x16": ("images/favicon-16.png", "image/png"),
+                "32x32": ("images/favicon-32.png", "image/png"),
+            },
         )
 
     def test_portrait_has_a_responsive_derivative_and_original_fallback(self):
