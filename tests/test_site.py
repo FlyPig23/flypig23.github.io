@@ -17,11 +17,10 @@ EXPECTED_SECTIONS = [
     "publications",
 ]
 
-EXPECTED_INTERESTS = [
-    "Agent System",
-    "Data Mining",
-    "AI for Science",
-]
+EXPECTED_INTEREST_SENTENCE = (
+    "My research interests center on Agent System, Data Mining, "
+    "and AI for Science."
+)
 
 EXPECTED_NEWS = [
     "2026 — SciImpact accepted to Findings of ACL 2026.",
@@ -872,16 +871,23 @@ class SiteContractTests(unittest.TestCase):
 
     def test_research_interests_are_integrated_into_about_copy(self):
         about = self.by_id("about-me")
+        about_copy = self.one(
+            self.with_class(about, "about-copy"),
+            "About copy",
+        )
         paragraphs = [
             element
-            for element in self.elements(about, tag="p")
-            if all(
-                interest in element.visible_text
-                for interest in EXPECTED_INTERESTS
-            )
+            for element in self.elements(about_copy, tag="p")
+            if EXPECTED_INTEREST_SENTENCE in element.visible_text
         ]
 
-        self.one(paragraphs, "About paragraph containing all research interests")
+        self.one(paragraphs, "About paragraph containing the interests sentence")
+        self.assertEqual(
+            about_copy.visible_text.count(EXPECTED_INTEREST_SENTENCE),
+            1,
+        )
+
+    def test_no_standalone_research_interest_markup_or_styles_remain(self):
         self.assertEqual(
             [
                 element
@@ -890,7 +896,19 @@ class SiteContractTests(unittest.TestCase):
             ],
             [],
         )
-        self.assertEqual(self.with_class(about, "research-interest-title"), [])
+        research_interest_elements = [
+            element
+            for element in self.elements()
+            if any(
+                class_name.startswith("research-interest")
+                for class_name in element.classes
+            )
+        ]
+        self.assertEqual(research_interest_elements, [])
+        self.assertNotRegex(
+            strip_css_comments(self.css),
+            r"\.research-interest(?:-[a-z0-9_-]+)?",
+        )
 
     def test_section_indices_match_three_section_order(self):
         actual = []
