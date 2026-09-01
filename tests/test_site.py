@@ -142,6 +142,61 @@ EXPECTED_PUBLICATION_LINKS = [
     "https://aclanthology.org/2023.emnlp-main.647/",
 ]
 
+EXPECTED_PUBLICATION_AUXILIARY_LINKS = [
+    [
+        (
+            "Project",
+            "Project for MemeBridge",
+            "https://flypig23.github.io/memebridge-homepage/",
+        ),
+        (
+            "Dataset",
+            "Dataset for MemeBridge",
+            "https://drive.google.com/drive/folders/152AN3iREfi71WThArmr8OcUWM5cV8YZy",
+        ),
+    ],
+    [
+        (
+            "Project",
+            "Project for SciImpact",
+            "https://flypig23.github.io/sciimpact-homepage/",
+        ),
+        (
+            "Dataset and Code",
+            "Dataset and Code for SciImpact",
+            "https://github.com/FlyPig23/SciImpact",
+        ),
+    ],
+    [
+        (
+            "Project",
+            "Project for Inference-Time Control for Trustworthy "
+            "Large Language Models",
+            "https://leopoldwhite.github.io/"
+            "Awesome-Inference-Time-Trustworthiness/",
+        ),
+        (
+            "Code",
+            "Code for Inference-Time Control for Trustworthy "
+            "Large Language Models",
+            "https://github.com/leopoldwhite/"
+            "Awesome-Inference-Time-Trustworthiness",
+        ),
+    ],
+    [
+        (
+            "Code",
+            "Code for Beyond Semantic Similarity",
+            "https://github.com/vvjohn/DCI",
+        ),
+    ],
+    [],
+    [],
+    [],
+    [],
+    [],
+]
+
 PRESERVED_AND_USED_ASSETS = {
     "images/prof_pic.jpg",
     "images/tamu.png",
@@ -1239,6 +1294,61 @@ class SiteContractTests(unittest.TestCase):
             for row in self.publication_rows()
         ]
         self.assertEqual(actual, EXPECTED_PUBLICATION_LINKS)
+
+    def test_publication_auxiliary_links_are_exact_and_useful(self):
+        actual = []
+        for row in self.publication_rows():
+            publication_bodies = [
+                child
+                for child in row.children
+                if child.tag == "div"
+                and "publication-body" in child.classes
+            ]
+            publication_body = self.one(
+                publication_bodies,
+                "publication body",
+            )
+            links_lists = [
+                child
+                for child in publication_body.children
+                if child.tag == "ul"
+                and "publication-links" in child.classes
+            ]
+            links_list = self.one(
+                links_lists,
+                "publication links list",
+            )
+            actual.append(
+                (
+                    self.publication_title_link(row).text,
+                    [
+                        (
+                            link.visible_text,
+                            link.attr("aria-label"),
+                            link.attr("href"),
+                        )
+                        for link in self.elements(links_list, tag="a")
+                    ],
+                )
+            )
+
+        expected = [
+            (publication[2], links)
+            for publication, links in zip(
+                EXPECTED_PUBLICATIONS,
+                EXPECTED_PUBLICATION_AUXILIARY_LINKS,
+            )
+        ]
+        self.assertEqual(actual, expected)
+        flattened = [link for _, links in actual for link in links]
+        self.assertNotIn(
+            "DOI",
+            [visible_text for visible_text, _, _ in flattened],
+        )
+        self.assertNotIn(
+            "https://www.xiameng.org/KDD_Meme_Bridge.pdf",
+            [href for _, _, href in flattened],
+        )
 
     def test_each_publication_emphasizes_hangxiao_in_author_line(self):
         actual_authors = []
