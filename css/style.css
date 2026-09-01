@@ -727,7 +727,7 @@ a {
     }
 
     .primary-nav {
-        gap-inline: .65rem;
+        column-gap: .65rem;
     }
 
     .education-item-text {

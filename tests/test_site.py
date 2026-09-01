@@ -1504,6 +1504,40 @@ class SiteContractTests(unittest.TestCase):
             "Hero focus outline must use the warm-white hero text color",
         )
 
+    def test_narrow_navigation_uses_valid_column_spacing(self):
+        css = strip_css_comments(self.css)
+        self.assertNotRegex(
+            css,
+            r"(?<![\w-])gap-inline\s*:",
+            "gap-inline is not a valid CSS property",
+        )
+
+        narrow_navigation_bodies = []
+        for prelude, body in css_blocks(css):
+            if not re.fullmatch(
+                r"@media\s*\(\s*max-width\s*:\s*22rem\s*\)",
+                prelude.strip(),
+                re.IGNORECASE,
+            ):
+                continue
+            for selector_prelude, selector_body in css_blocks(body):
+                if ".primary-nav" in split_top_level_commas(
+                    selector_prelude
+                ):
+                    narrow_navigation_bodies.append(selector_body)
+
+        self.assertTrue(
+            any(
+                re.search(
+                    r"(?:^|;)\s*column-gap\s*:\s*\.65rem\b",
+                    body,
+                    re.IGNORECASE,
+                )
+                for body in narrow_navigation_bodies
+            ),
+            "The narrow primary navigation needs a .65rem column gap",
+        )
+
     def test_stylesheets_do_not_use_import(self):
         for source, css, _ in self.stylesheet_sources():
             with self.subTest(source=source):
