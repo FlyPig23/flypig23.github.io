@@ -160,8 +160,11 @@ RETAINED_BUT_UNUSED_ASSETS = {
 EXPECTED_LOGO_ASSETS = {
     "images/zhu-logo.png": (210, 210),
     "images/zhu-logo-nav.png": (37, 37),
+    "images/zhu-logo-nav@2x.png": (74, 74),
     "images/favicon-16.png": (16, 16),
     "images/favicon-32.png": (32, 32),
+    "images/favicon-dark-16.png": (16, 16),
+    "images/favicon-dark-32.png": (32, 32),
 }
 
 MAX_PNG_FILE_BYTES = 8 * 1024 * 1024
@@ -1340,6 +1343,11 @@ class SiteContractTests(unittest.TestCase):
         )
 
         self.assertEqual(personal_mark.attr("src"), "images/zhu-logo-nav.png")
+        with self.subTest(contract="retina navigation logo source set"):
+            self.assertEqual(
+                personal_mark.attr("srcset"),
+                "images/zhu-logo-nav.png 1x, images/zhu-logo-nav@2x.png 2x",
+            )
         self.assertEqual(personal_mark.attr("width"), "37")
         self.assertEqual(personal_mark.attr("height"), "37")
         self.assertEqual(personal_mark.attr("alt"), "")
@@ -1352,19 +1360,36 @@ class SiteContractTests(unittest.TestCase):
             if "icon" in (link.attr("rel") or "").lower().split()
         ]
         icons = {
-            link.attr("sizes"): (link.attr("href"), link.attr("type"))
+            (link.attr("media"), link.attr("sizes")): (
+                link.attr("href"),
+                link.attr("type"),
+            )
             for link in icon_links
         }
         self.assertEqual(
             len(icon_links),
             len(icons),
-            "Favicon sizes must be unique",
+            "Favicon (media, sizes) pairs must be unique",
         )
         self.assertEqual(
             icons,
             {
-                "16x16": ("images/favicon-16.png", "image/png"),
-                "32x32": ("images/favicon-32.png", "image/png"),
+                ("(prefers-color-scheme: light)", "16x16"): (
+                    "images/favicon-16.png",
+                    "image/png",
+                ),
+                ("(prefers-color-scheme: light)", "32x32"): (
+                    "images/favicon-32.png",
+                    "image/png",
+                ),
+                ("(prefers-color-scheme: dark)", "16x16"): (
+                    "images/favicon-dark-16.png",
+                    "image/png",
+                ),
+                ("(prefers-color-scheme: dark)", "32x32"): (
+                    "images/favicon-dark-32.png",
+                    "image/png",
+                ),
             },
         )
 
