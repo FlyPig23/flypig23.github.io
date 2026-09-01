@@ -171,15 +171,32 @@ a {
     text-decoration: none;
 }
 
+.brand-lockup {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    gap: .6rem;
+}
+
 .brand-mark {
-    display: grid;
-    place-items: center;
     width: 2.35rem;
-    aspect-ratio: 1;
-    border: 1px solid rgb(255 255 255 / .42);
-    border-radius: var(--radius-sm);
-    font: 700 .75rem/1 var(--font-mono);
-    letter-spacing: .08em;
+    height: 2.35rem;
+    object-fit: contain;
+}
+
+.brand-divider {
+    width: 1px;
+    height: 1.75rem;
+    background: rgb(255 255 255 / .28);
+}
+
+.brand-institution-mark {
+    width: 2.4rem;
+    height: auto;
+    padding: .12rem;
+    background: #fff;
+    border-radius: .15rem;
+    object-fit: contain;
 }
 
 .brand-label,
@@ -680,6 +697,18 @@ a {
 @media (max-width: 22rem) {
     .hero h1 {
         font-size: 2.75rem;
+    }
+
+    .brand {
+        gap: .6rem;
+    }
+
+    .brand-lockup {
+        gap: .45rem;
+    }
+
+    .brand-institution-mark {
+        width: 2.2rem;
     }
 
     .primary-nav {
