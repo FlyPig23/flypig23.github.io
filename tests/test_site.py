@@ -1,7 +1,10 @@
+import binascii
 import json
 import re
 import struct
+import tempfile
 import unittest
+import zlib
 from html.parser import HTMLParser
 from pathlib import Path
 from urllib.parse import parse_qs, unquote, urlsplit
@@ -160,6 +163,9 @@ EXPECTED_LOGO_ASSETS = {
     "images/favicon-16.png": (16, 16),
     "images/favicon-32.png": (32, 32),
 }
+
+MAX_PNG_FILE_BYTES = 8 * 1024 * 1024
+MAX_PNG_PIXELS = 1_000_000
 
 VOID_ELEMENTS = {
     "area",
@@ -614,48 +620,253 @@ def srcset_urls(value):
 
 
 def png_info(path):
-    data = path.read_bytes()
+    path = Path(path)
     invalid_message = f"Invalid PNG data: {path}"
 
-    if data[:8] != b"\x89PNG\r\n\x1a\n":
+    try:
+        with path.open("rb") as source:
+            data = source.read(MAX_PNG_FILE_BYTES + 1)
+    except OSError as error:
+        raise AssertionError(invalid_message) from error
+
+    if (
+        len(data) > MAX_PNG_FILE_BYTES
+        or data[:8] != b"\x89PNG\r\n\x1a\n"
+    ):
         raise AssertionError(invalid_message)
 
+    width = height = color_type = bytes_per_pixel = None
+    palette_entries = None
+    transparency = None
+    idat_parts = []
+    seen_ihdr = False
+    seen_idat = False
+    idat_ended = False
+    seen_iend = False
     offset = 8
-    if len(data) < offset + 8:
-        raise AssertionError(invalid_message)
+    chunk_index = 0
 
-    length, chunk_type = struct.unpack(">I4s", data[offset:offset + 8])
-    if chunk_type != b"IHDR" or length != 13:
-        raise AssertionError(invalid_message)
-
-    chunk_data_end = offset + 8 + length
-    chunk_end = chunk_data_end + 4
-    if len(data) < chunk_end:
-        raise AssertionError(invalid_message)
-
-    width, height, _, color_type, _, _, _ = struct.unpack(
-        ">IIBBBBB",
-        data[offset + 8:chunk_data_end],
-    )
-    if not width or not height:
-        raise AssertionError(invalid_message)
-
-    has_alpha = color_type in {4, 6}
-    offset = chunk_end
     while offset < len(data):
-        if len(data) < offset + 8:
+        if len(data) - offset < 12:
             raise AssertionError(invalid_message)
-        length, chunk_type = struct.unpack(">I4s", data[offset:offset + 8])
-        chunk_end = offset + 8 + length + 4
-        if len(data) < chunk_end:
-            raise AssertionError(invalid_message)
-        if chunk_type == b"tRNS":
-            has_alpha = True
-        if chunk_type == b"IEND":
-            return width, height, has_alpha
-        offset = chunk_end
 
-    raise AssertionError(invalid_message)
+        length = struct.unpack(">I", data[offset:offset + 4])[0]
+        chunk_type = data[offset + 4:offset + 8]
+        data_start = offset + 8
+        data_end = data_start + length
+        chunk_end = data_end + 4
+        if length > MAX_PNG_FILE_BYTES or chunk_end > len(data):
+            raise AssertionError(invalid_message)
+        if any(
+            not (65 <= byte <= 90 or 97 <= byte <= 122)
+            for byte in chunk_type
+        ) or 97 <= chunk_type[2] <= 122:
+            raise AssertionError(invalid_message)
+
+        payload = data[data_start:data_end]
+        stored_crc = struct.unpack(">I", data[data_end:chunk_end])[0]
+        calculated_crc = binascii.crc32(chunk_type)
+        calculated_crc = binascii.crc32(payload, calculated_crc) & 0xFFFFFFFF
+        if stored_crc != calculated_crc:
+            raise AssertionError(invalid_message)
+
+        if chunk_index == 0 and chunk_type != b"IHDR":
+            raise AssertionError(invalid_message)
+
+        if chunk_type == b"IHDR":
+            if seen_ihdr or chunk_index != 0 or length != 13:
+                raise AssertionError(invalid_message)
+            (
+                width,
+                height,
+                bit_depth,
+                color_type,
+                compression_method,
+                filter_method,
+                interlace_method,
+            ) = struct.unpack(">IIBBBBB", payload)
+            if (
+                not width
+                or not height
+                or width * height > MAX_PNG_PIXELS
+                or bit_depth != 8
+                or color_type not in {0, 2, 3, 4, 6}
+                or compression_method != 0
+                or filter_method != 0
+                or interlace_method != 0
+            ):
+                raise AssertionError(invalid_message)
+            bytes_per_pixel = {
+                0: 1,
+                2: 3,
+                3: 1,
+                4: 2,
+                6: 4,
+            }[color_type]
+            seen_ihdr = True
+        elif not seen_ihdr:
+            raise AssertionError(invalid_message)
+        elif chunk_type == b"PLTE":
+            if (
+                seen_idat
+                or palette_entries is not None
+                or transparency is not None
+                or color_type in {0, 4}
+                or not length
+                or length % 3
+                or length > 768
+            ):
+                raise AssertionError(invalid_message)
+            palette_entries = length // 3
+        elif chunk_type == b"tRNS":
+            if seen_idat or transparency is not None:
+                raise AssertionError(invalid_message)
+            if color_type == 0:
+                if length != 2 or struct.unpack(">H", payload)[0] > 255:
+                    raise AssertionError(invalid_message)
+            elif color_type == 2:
+                if length != 6 or any(
+                    sample > 255
+                    for sample in struct.unpack(">HHH", payload)
+                ):
+                    raise AssertionError(invalid_message)
+            elif color_type == 3:
+                if (
+                    palette_entries is None
+                    or not length
+                    or length > palette_entries
+                ):
+                    raise AssertionError(invalid_message)
+            else:
+                raise AssertionError(invalid_message)
+            transparency = payload
+        elif chunk_type == b"IDAT":
+            if idat_ended or (color_type == 3 and palette_entries is None):
+                raise AssertionError(invalid_message)
+            idat_parts.append(payload)
+            seen_idat = True
+        elif chunk_type == b"IEND":
+            if length or not seen_idat:
+                raise AssertionError(invalid_message)
+            seen_iend = True
+        elif chunk_type[0] <= 90:
+            raise AssertionError(invalid_message)
+
+        offset = chunk_end
+        chunk_index += 1
+        if seen_iend:
+            break
+        if seen_idat and chunk_type != b"IDAT":
+            idat_ended = True
+
+    if (
+        not seen_ihdr
+        or not seen_idat
+        or not seen_iend
+        or offset != len(data)
+        or (color_type == 3 and palette_entries is None)
+    ):
+        raise AssertionError(invalid_message)
+
+    row_bytes = width * bytes_per_pixel
+    expected_size = height * (row_bytes + 1)
+    compressed = b"".join(idat_parts)
+    try:
+        decompressor = zlib.decompressobj()
+        scanlines = decompressor.decompress(compressed, expected_size + 1)
+        if decompressor.unconsumed_tail or len(scanlines) > expected_size:
+            raise AssertionError(invalid_message)
+        scanlines += decompressor.flush(expected_size + 1 - len(scanlines))
+    except zlib.error as error:
+        raise AssertionError(invalid_message) from error
+
+    if (
+        len(scanlines) != expected_size
+        or not decompressor.eof
+        or decompressor.unused_data
+        or decompressor.unconsumed_tail
+    ):
+        raise AssertionError(invalid_message)
+
+    pixels = bytearray()
+    previous = bytearray(row_bytes)
+    position = 0
+    for _ in range(height):
+        filter_type = scanlines[position]
+        position += 1
+        filtered = scanlines[position:position + row_bytes]
+        position += row_bytes
+        current = bytearray(row_bytes)
+
+        for index, value in enumerate(filtered):
+            left = current[index - bytes_per_pixel] if (
+                index >= bytes_per_pixel
+            ) else 0
+            above = previous[index]
+            upper_left = previous[index - bytes_per_pixel] if (
+                index >= bytes_per_pixel
+            ) else 0
+
+            if filter_type == 0:
+                predictor = 0
+            elif filter_type == 1:
+                predictor = left
+            elif filter_type == 2:
+                predictor = above
+            elif filter_type == 3:
+                predictor = (left + above) // 2
+            elif filter_type == 4:
+                estimate = left + above - upper_left
+                left_distance = abs(estimate - left)
+                above_distance = abs(estimate - above)
+                upper_left_distance = abs(estimate - upper_left)
+                if left_distance <= above_distance and (
+                    left_distance <= upper_left_distance
+                ):
+                    predictor = left
+                elif above_distance <= upper_left_distance:
+                    predictor = above
+                else:
+                    predictor = upper_left
+            else:
+                raise AssertionError(invalid_message)
+
+            current[index] = (value + predictor) & 0xFF
+
+        pixels.extend(current)
+        previous = current
+
+    if color_type == 6:
+        has_transparency = any(
+            pixels[index] < 255
+            for index in range(3, len(pixels), 4)
+        )
+    elif color_type == 4:
+        has_transparency = any(
+            pixels[index] < 255
+            for index in range(1, len(pixels), 2)
+        )
+    elif color_type == 3:
+        if any(index >= palette_entries for index in pixels):
+            raise AssertionError(invalid_message)
+        alpha_values = transparency or b""
+        has_transparency = any(
+            index < len(alpha_values) and alpha_values[index] < 255
+            for index in pixels
+        )
+    elif color_type == 2 and transparency is not None:
+        transparent_pixel = struct.unpack(">HHH", transparency)
+        has_transparency = any(
+            tuple(pixels[index:index + 3]) == transparent_pixel
+            for index in range(0, len(pixels), 3)
+        )
+    elif color_type == 0 and transparency is not None:
+        transparent_sample = struct.unpack(">H", transparency)[0]
+        has_transparency = transparent_sample in pixels
+    else:
+        has_transparency = False
+
+    return width, height, has_transparency
 
 
 class SiteContractTests(unittest.TestCase):
@@ -1093,10 +1304,10 @@ class SiteContractTests(unittest.TestCase):
                     path.is_file(),
                     f"Missing compact Zhu logo asset: {relative_path}",
                 )
-                width, height, has_alpha = png_info(path)
+                width, height, has_transparency = png_info(path)
                 self.assertEqual((width, height), expected_dimensions)
                 self.assertTrue(
-                    has_alpha,
+                    has_transparency,
                     "Compact Zhu logo asset needs transparency: "
                     f"{relative_path}",
                 )
@@ -1105,6 +1316,16 @@ class SiteContractTests(unittest.TestCase):
             self.with_class(self.dom, "brand", tag="a"),
             "a.brand",
         )
+        self.assertEqual(
+            brand.attr("aria-label"),
+            "Hangxiao Zhu — back to top",
+        )
+        brand_label = self.one(
+            self.with_class(brand, "brand-label"),
+            ".brand-label inside a.brand",
+        )
+        self.assertEqual(brand_label.visible_text, "Research Index")
+
         lockup = self.one(
             self.with_class(brand, "brand-lockup"),
             ".brand-lockup inside a.brand",
@@ -1722,6 +1943,228 @@ class HarnessGuardTests(unittest.TestCase):
         parser.feed(markup)
         parser.close()
         return parser
+
+    def png_chunk(self, chunk_type, payload, bad_crc=False):
+        checksum = binascii.crc32(chunk_type + payload) & 0xFFFFFFFF
+        if bad_crc:
+            checksum ^= 1
+        return (
+            struct.pack(">I", len(payload))
+            + chunk_type
+            + payload
+            + struct.pack(">I", checksum)
+        )
+
+    def png_fixture(
+        self,
+        scanlines,
+        *,
+        width=1,
+        height=1,
+        color_type=6,
+        palette=None,
+        transparency=None,
+        include_idat=True,
+        bad_idat_crc=False,
+    ):
+        ihdr = struct.pack(
+            ">IIBBBBB",
+            width,
+            height,
+            8,
+            color_type,
+            0,
+            0,
+            0,
+        )
+        chunks = [self.png_chunk(b"IHDR", ihdr)]
+        if palette is not None:
+            chunks.append(self.png_chunk(b"PLTE", palette))
+        if transparency is not None:
+            chunks.append(self.png_chunk(b"tRNS", transparency))
+        if include_idat:
+            chunks.append(
+                self.png_chunk(
+                    b"IDAT",
+                    zlib.compress(scanlines),
+                    bad_crc=bad_idat_crc,
+                )
+            )
+        chunks.append(self.png_chunk(b"IEND", b""))
+        return b"\x89PNG\r\n\x1a\n" + b"".join(chunks)
+
+    def write_png(self, directory, name, payload):
+        path = Path(directory) / name
+        path.write_bytes(payload)
+        return path
+
+    def test_png_info_checks_pixels_not_just_alpha_channel(self):
+        with tempfile.TemporaryDirectory() as directory:
+            opaque = self.write_png(
+                directory,
+                "opaque-rgba.png",
+                self.png_fixture(b"\x00\x10\x20\x30\xff"),
+            )
+            transparent = self.write_png(
+                directory,
+                "transparent-rgba.png",
+                self.png_fixture(b"\x00\x10\x20\x30\x80"),
+            )
+
+            self.assertEqual(png_info(opaque), (1, 1, False))
+            self.assertEqual(png_info(transparent), (1, 1, True))
+
+    def test_png_info_rejects_missing_idat_and_bad_crc(self):
+        with tempfile.TemporaryDirectory() as directory:
+            fixtures = {
+                "missing-idat.png": self.png_fixture(
+                    b"",
+                    include_idat=False,
+                ),
+                "bad-crc.png": self.png_fixture(
+                    b"\x00\x10\x20\x30\x80",
+                    bad_idat_crc=True,
+                ),
+            }
+
+            for name, payload in fixtures.items():
+                with self.subTest(fixture=name):
+                    path = self.write_png(directory, name, payload)
+                    with self.assertRaisesRegex(
+                        AssertionError,
+                        re.escape(str(path)),
+                    ):
+                        png_info(path)
+
+    def test_png_info_handles_required_transparency_encodings(self):
+        palette = b"\x10\x20\x30\x40\x50\x60"
+        cases = {
+            "grayscale-alpha-transparent.png": (
+                self.png_fixture(
+                    b"\x00\x20\x80",
+                    color_type=4,
+                ),
+                True,
+            ),
+            "grayscale-alpha-opaque.png": (
+                self.png_fixture(
+                    b"\x00\x20\xff",
+                    color_type=4,
+                ),
+                False,
+            ),
+            "indexed-transparent.png": (
+                self.png_fixture(
+                    b"\x00\x00",
+                    color_type=3,
+                    palette=palette,
+                    transparency=b"\x00\xff",
+                ),
+                True,
+            ),
+            "indexed-opaque.png": (
+                self.png_fixture(
+                    b"\x00\x01",
+                    color_type=3,
+                    palette=palette,
+                    transparency=b"\x00\xff",
+                ),
+                False,
+            ),
+            "truecolor-transparent.png": (
+                self.png_fixture(
+                    b"\x00\x10\x20\x30",
+                    color_type=2,
+                    transparency=struct.pack(">HHH", 0x10, 0x20, 0x30),
+                ),
+                True,
+            ),
+            "truecolor-opaque.png": (
+                self.png_fixture(
+                    b"\x00\x10\x20\x30",
+                    color_type=2,
+                    transparency=struct.pack(">HHH", 0x10, 0x20, 0x31),
+                ),
+                False,
+            ),
+            "grayscale-transparent.png": (
+                self.png_fixture(
+                    b"\x00\x20",
+                    color_type=0,
+                    transparency=struct.pack(">H", 0x20),
+                ),
+                True,
+            ),
+            "grayscale-opaque.png": (
+                self.png_fixture(
+                    b"\x00\x20",
+                    color_type=0,
+                    transparency=struct.pack(">H", 0x21),
+                ),
+                False,
+            ),
+        }
+
+        with tempfile.TemporaryDirectory() as directory:
+            for name, (payload, expected) in cases.items():
+                with self.subTest(fixture=name):
+                    path = self.write_png(directory, name, payload)
+                    self.assertEqual(png_info(path), (1, 1, expected))
+
+    def test_png_info_rejects_palette_after_transparency(self):
+        ihdr = struct.pack(">IIBBBBB", 1, 1, 8, 2, 0, 0, 0)
+        payload = b"\x89PNG\r\n\x1a\n" + b"".join(
+            [
+                self.png_chunk(b"IHDR", ihdr),
+                self.png_chunk(
+                    b"tRNS",
+                    struct.pack(">HHH", 0x10, 0x20, 0x30),
+                ),
+                self.png_chunk(b"PLTE", b"\x10\x20\x30"),
+                self.png_chunk(
+                    b"IDAT",
+                    zlib.compress(b"\x00\x10\x20\x30"),
+                ),
+                self.png_chunk(b"IEND", b""),
+            ]
+        )
+
+        with tempfile.TemporaryDirectory() as directory:
+            path = self.write_png(directory, "bad-order.png", payload)
+            with self.assertRaisesRegex(
+                AssertionError,
+                re.escape(str(path)),
+            ):
+                png_info(path)
+
+    def test_png_info_reconstructs_all_standard_filters(self):
+        previous = b"\x0a\xff\x14\xff"
+        current = b"\x0f\xff\x19\xff"
+        cases = {
+            "none.png": b"\x00" + current,
+            "sub.png": b"\x01\x0f\xff\x0a\x00",
+            "up.png": b"\x00" + previous + b"\x02\x05\x00\x05\x00",
+            "average.png": (
+                b"\x00" + previous + b"\x03\x0a\x80\x08\x00"
+            ),
+            "paeth.png": b"\x00" + previous + b"\x04\x05\x00\x05\x00",
+        }
+
+        with tempfile.TemporaryDirectory() as directory:
+            for name, scanlines in cases.items():
+                with self.subTest(fixture=name):
+                    height = 1 if name in {"none.png", "sub.png"} else 2
+                    path = self.write_png(
+                        directory,
+                        name,
+                        self.png_fixture(
+                            scanlines,
+                            width=2,
+                            height=height,
+                            color_type=4,
+                        ),
+                    )
+                    self.assertEqual(png_info(path), (2, height, False))
 
     def test_parser_records_case_insensitive_duplicate_attributes(self):
         parser = self.parse(
