@@ -19,6 +19,7 @@ EXPECTED_SECTIONS = [
     "about-me",
     "news",
     "publications",
+    "projects",
 ]
 
 EXPECTED_INTEREST_SENTENCE = (
@@ -1232,7 +1233,7 @@ class SiteContractTests(unittest.TestCase):
             r"\.research-interest(?:-[a-z0-9_-]+)?",
         )
 
-    def test_section_indices_match_three_section_order(self):
+    def test_section_indices_match_section_order(self):
         actual = []
         for section_id in EXPECTED_SECTIONS:
             section = self.by_id(section_id)
@@ -1242,7 +1243,7 @@ class SiteContractTests(unittest.TestCase):
             )
             actual.append(index.text)
 
-        self.assertEqual(actual, ["01", "02", "03"])
+        self.assertEqual(actual, ["01", "02", "03", "04"])
 
     def test_news_contains_only_the_approved_items(self):
         section, _, items = self.section_list_items("news", "news-list")

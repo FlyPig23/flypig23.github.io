@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Hangxiao Zhu is a Computer Science Ph.D. student at Texas A&amp;M University researching agent systems, data mining, and AI for science.">
+    <meta name="description" content="Hangxiao Zhu, Texas A&amp;M Computer Science Ph.D. student: agent systems, data mining, AI for science, and open-source projects JEV Switch and DealWeek.">
     <meta name="theme-color" content="#171a1f">
     <meta property="og:title" content="Hangxiao Zhu — Research Index">
-    <meta property="og:description" content="Hangxiao Zhu is a Computer Science Ph.D. student at Texas A&amp;M University researching agent systems, data mining, and AI for science.">
+    <meta property="og:description" content="Hangxiao Zhu, Texas A&amp;M Computer Science Ph.D. student: agent systems, data mining, AI for science, and open-source projects JEV Switch and DealWeek.">
     <meta property="og:url" content="https://flypig23.github.io/">
     <meta property="og:type" content="profile">
     <title>Hangxiao Zhu — Research Index</title>
@@ -40,6 +40,25 @@
                     "https://scholar.google.com/citations?user=fmDa4U4AAAAJ&hl=en",
                     "https://github.com/FlyPig23"
                 ]
+            },
+            {
+                "@type": "SoftwareSourceCode",
+                "@id": "https://flypig23.github.io/#jev-switch",
+                "name": "Codex × ChatGPT · JEV Switch",
+                "codeRepository": "https://github.com/FlyPig23/Codex_ChatGPT_JEV_Switch",
+                "url": "https://github.com/FlyPig23/Codex_ChatGPT_JEV_Switch",
+                "description": "An open-source extension of Codex with ChatGPT that uses TypeSafe's Jev model and deterministic rules to route coding tasks between Codex execution and ChatGPT planning, debugging, and review.",
+                "contributor": { "@id": "https://flypig23.github.io/#person" },
+                "isBasedOn": "https://github.com/XiaoDuoYa/codex-with-chatgpt"
+            },
+            {
+                "@type": "SoftwareSourceCode",
+                "@id": "https://flypig23.github.io/#dealweek",
+                "name": "DealWeek",
+                "codeRepository": "https://github.com/FlyPig23/DealWeek",
+                "url": "https://github.com/FlyPig23/DealWeek",
+                "description": "A local-first, open-source assistant that turns promotional emails into a weekly savings calendar, preserving source evidence and supporting optional JEV classification and promotion deduplication.",
+                "author": { "@id": "https://flypig23.github.io/#person" }
             },
             {
                 "@type": "ScholarlyArticle",
@@ -136,6 +155,7 @@
                     <a href="#about-me">About</a>
                     <a href="#news">News</a>
                     <a href="#publications">Publications</a>
+                    <a href="#projects">Projects</a>
                 </nav>
             </div>
 
@@ -422,12 +442,39 @@
                 </ol>
             </div>
         </section>
+        <section class="section section-projects" id="projects">
+            <div class="section-inner">
+                <div class="section-heading">
+                    <p class="section-index" aria-hidden="true">04</p>
+                    <h2>Projects</h2>
+                </div>
+                <div class="projects-body">
+                    <p class="projects-intro">My open-source work in AI agent collaboration and everyday automation.</p>
+                    <ul class="project-list">
+                        <li>
+                            <article class="project" id="jev-switch">
+                                <h3 class="project-title"><a href="https://github.com/FlyPig23/Codex_ChatGPT_JEV_Switch" target="_blank" rel="noopener noreferrer">Codex × ChatGPT · JEV Switch</a></h3>
+                                <p>An open-source extension of Codex with ChatGPT that uses TypeSafe's Jev model and deterministic rules to route coding tasks between Codex execution and ChatGPT planning, debugging, and review. It automates handoffs based on task complexity and risk, with configurable preferences for speed and token cost.</p>
+                                <a class="project-source" href="https://github.com/FlyPig23/Codex_ChatGPT_JEV_Switch" target="_blank" rel="noopener noreferrer" aria-label="JEV Switch source code on GitHub">GitHub <span aria-hidden="true">↗</span></a>
+                            </article>
+                        </li>
+                        <li>
+                            <article class="project" id="dealweek">
+                                <h3 class="project-title"><a href="https://github.com/FlyPig23/DealWeek" target="_blank" rel="noopener noreferrer">DealWeek</a></h3>
+                                <p>A local-first, open-source assistant that turns promotional emails into a weekly savings calendar, keeping offer terms and deadlines traceable to their source messages. It supports Gmail and Outlook through agent mail connectors, plus exported email files, with optional JEV classification and promotion deduplication.</p>
+                                <a class="project-source" href="https://github.com/FlyPig23/DealWeek" target="_blank" rel="noopener noreferrer" aria-label="DealWeek source code on GitHub">GitHub <span aria-hidden="true">↗</span></a>
+                            </article>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </section>
     </main>
 
     <footer class="site-footer">
         <div class="footer-inner">
             <p>&copy; <span data-current-year>2026</span> Hangxiao Zhu.</p>
-            <p><time datetime="2026-09-01">Last updated September 2026</time></p>
+            <p><time datetime="2026-09-25">Last updated September 2026</time></p>
         </div>
     </footer>
 </body>
