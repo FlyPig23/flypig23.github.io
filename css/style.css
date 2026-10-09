@@ -606,6 +606,36 @@ a {
     text-decoration-thickness: .13em;
 }
 
+/* Work experience */
+
+.experience-item {
+    display: grid;
+    align-content: start;
+    gap: .85rem;
+    padding-block: clamp(1.35rem, 3vw, 2rem);
+    border-block: 1px solid var(--color-rule);
+}
+
+.experience-date {
+    margin: 0;
+    color: var(--color-accent);
+    font: 700 .75rem/1.45 var(--font-mono);
+    letter-spacing: .06em;
+    text-transform: uppercase;
+}
+
+.experience-body h3 {
+    margin: 0;
+    font: 600 clamp(1.05rem, .35vw + 1rem, 1.25rem)/1.35 var(--font-body);
+    letter-spacing: -.012em;
+}
+
+.experience-body p {
+    margin: .45rem 0 0;
+    color: var(--color-muted);
+    font-size: .94rem;
+}
+
 /* Open-source projects */
 
 .projects-body {
@@ -713,7 +743,8 @@ a {
         grid-template-columns: minmax(0, 1fr) minmax(17rem, .9fr);
     }
 
-    .publication {
+    .publication,
+    .experience-item {
         grid-template-columns: 7rem minmax(0, 1fr);
     }
 }

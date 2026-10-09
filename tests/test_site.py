@@ -17,6 +17,7 @@ CANONICAL_URL = "https://flypig23.github.io/"
 
 EXPECTED_SECTIONS = [
     "about-me",
+    "work-experience",
     "news",
     "publications",
     "projects",
@@ -1243,7 +1244,7 @@ class SiteContractTests(unittest.TestCase):
             )
             actual.append(index.text)
 
-        self.assertEqual(actual, ["01", "02", "03", "04"])
+        self.assertEqual(actual, ["01", "02", "03", "04", "05"])
 
     def test_news_contains_only_the_approved_items(self):
         section, _, items = self.section_list_items("news", "news-list")
